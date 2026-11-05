@@ -1,0 +1,25 @@
+# Copy to terraform.tfvars and fill in your client config (or copy the pre-filled block from
+# https://thisbit.ai/dashboard/integrations.html#key-vault-card -> Provision new resources).
+
+# Optional if ARM_SUBSCRIPTION_ID is exported in your shell:
+# subscription_id = "00000000-0000-0000-0000-000000000000"
+# tenant_id       = "00000000-0000-0000-0000-000000000000"
+
+thisbit_connector_client_id = "aedc1587-9429-480d-a3b3-03d0a34f0251" # production thisbit.ai
+resource_group_name         = "rg-thisbit-cauchy"
+location                    = "westeurope"
+storage_account_name        = "stthisbitcauchy01"
+key_vault_name              = "kv-thisbit-cauchy01"
+
+# Storage-only setup (skip Key Vault creation):
+# create_key_vault = false
+
+# Use an existing resource group instead of creating a new one:
+# create_resource_group = false
+
+# Grant the connector only the two containers instead of the storage account:
+# blob_role_scope = "containers"
+
+# Optional: tag resources for the Integrations page's Discover button:
+# thisbit_account_id     = "<your-thisbit-workspace-id>"
+# grant_discovery_reader = true
