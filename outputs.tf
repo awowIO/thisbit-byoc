@@ -15,7 +15,7 @@ output "containers" {
 
 output "key_vault_uri" {
   description = "The Key Vault's URI; a secret's URL is <uri>secrets/<name>. Null when no vault was created."
-  value       = var.create_key_vault ? azurerm_key_vault.thisbit[0].vault_uri : null
+  value       = local.create_key_vault ? azurerm_key_vault.thisbit[0].vault_uri : null
 }
 
 output "thisbit_connector_object_id" {

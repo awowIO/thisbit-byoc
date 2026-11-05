@@ -54,6 +54,7 @@ locals {
   resource_group_id   = var.create_resource_group ? azurerm_resource_group.thisbit[0].id : data.azurerm_resource_group.existing[0].id
   location            = var.create_resource_group ? azurerm_resource_group.thisbit[0].location : data.azurerm_resource_group.existing[0].location
   containers          = toset(["studio-media", "voice-reviews"])
+  create_key_vault    = var.create_key_vault && var.key_vault_name != ""
   # The thisbit_account_id tag is only what the optional Discover button on the Integrations page filters on.
   tags = var.thisbit_account_id == "" ? var.tags : merge(var.tags, { thisbit_account_id = var.thisbit_account_id })
 }
@@ -135,10 +136,10 @@ resource "azurerm_role_assignment" "connector_blob_data_container" {
   principal_type       = "ServicePrincipal"
 }
 
-# --- Key Vault: tracker and AI model secrets, read by URL at use time --------------------------------------------
+# --- Key Vault: optional tracker and AI model secrets, read by URL at use time -----------------------------------
 
 resource "azurerm_key_vault" "thisbit" {
-  count                      = var.create_key_vault ? 1 : 0
+  count                      = local.create_key_vault ? 1 : 0
   name                       = var.key_vault_name
   resource_group_name        = local.resource_group_name
   location                   = local.location
@@ -151,16 +152,11 @@ resource "azurerm_key_vault" "thisbit" {
 
   lifecycle {
     prevent_destroy = true
-
-    precondition {
-      condition     = var.key_vault_name != ""
-      error_message = "Set key_vault_name when create_key_vault is true (or set create_key_vault = false for Storage-only)."
-    }
   }
 }
 
 resource "azurerm_role_assignment" "connector_secrets" {
-  count                = var.create_key_vault ? 1 : 0
+  count                = local.create_key_vault ? 1 : 0
   scope                = azurerm_key_vault.thisbit[0].id
   role_definition_name = "Key Vault Secrets User"
   principal_id         = azuread_service_principal.thisbit_connector.object_id
@@ -169,7 +165,7 @@ resource "azurerm_role_assignment" "connector_secrets" {
 
 # The identity applying this may put secrets in, so the first secret needs no second step.
 resource "azurerm_role_assignment" "deployer_secrets_officer" {
-  count                = var.create_key_vault && var.grant_deployer_secrets_officer ? 1 : 0
+  count                = local.create_key_vault && var.grant_deployer_secrets_officer ? 1 : 0
   scope                = azurerm_key_vault.thisbit[0].id
   role_definition_name = "Key Vault Secrets Officer"
   principal_id         = data.azurerm_client_config.current.object_id
