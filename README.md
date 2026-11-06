@@ -1,67 +1,14 @@
-# Thisbit BYOC on Azure (`thisbit-byoc-azure`)
+# Thisbit BYOC (`thisbit-byoc`)
 
-[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FawowIO%2Fthisbit-byoc-azure%2Fmain%2Fazuredeploy.json)
+Thisbit records into `studio-media/` and `voice-reviews/` and reserves the store for one workspace with `voice-reviews/.thisbit-workspace`. Use a store dedicated to Thisbit.
 
-Provision the Azure resources a **Corporate (BYOC)** workspace brings for [Thisbit](https://thisbit.ai) in its own Microsoft Entra tenant and Azure subscription—either in **1 click via the Azure Portal** (`azuredeploy.json` / `azuredeploy.bicep`) or with **Terraform** (`main.tf`).
+| | **Azure Blob / ADLS** ([`azure/`](azure/)) | **S3 protocol** ([`s3/`](s3/) — AWS, R2, Hetzner, Scaleway, Spaces, B2, Wasabi, MinIO, Garage, Ceph) |
+| --- | --- | --- |
+| **You create** | a storage account | a bucket |
+| **You grant** | `Storage Blob Data Contributor` → **Thisbit Connector** (object ID shown in Thisbit) | an access key: `GetObject`, `PutObject`, `DeleteObject` on the bucket (narrow to the two prefixes if your provider can) |
+| **You paste in Thisbit** | account name | endpoint, bucket, key ID, secret |
+| **Thisbit stores** | nothing secret (Entra) | the key, encrypted |
+| **Fastest** | [Deploy to Azure ↗](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FawowIO%2Fthisbit-byoc%2Fmain%2Fazure%2Fazuredeploy.json) | provider console: bucket + key |
+| **IaC** | [`azure/`](azure/) | [`s3/aws/`](s3/aws/), [`s3/cloudflare-r2/`](s3/cloudflare-r2/) |
 
-> Prefer AWS S3, Cloudflare R2, Hetzner Object Storage, or MinIO instead of Azure? See **[`awowIO/thisbit-byoc-s3`](https://github.com/awowIO/thisbit-byoc-s3)**.
-
----
-
-## Option A: 1-Click "Deploy to Azure" (Browser Only, Zero CLI)
-
-Click **[Deploy to Azure ↗](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FawowIO%2Fthisbit-byoc-azure%2Fmain%2Fazuredeploy.json)** to open the Azure Portal template deployment form directly in your browser:
-
-1. Select your **Subscription** and **Resource group** (or click *Create new*).
-2. Enter a globally unique **Storage Account Name** (e.g. `stthisbitcauchy01`).
-3. *(Optional)* Enter the **Thisbit Connector Object ID** in your tenant to grant `Storage Blob Data Contributor` automatically, or assign `Storage Blob Data Contributor` to **Thisbit Connector** in the storage account's **Access Control (IAM)** tab after creation.
-4. Enter the storage account name under [**Thisbit → Integrations → External location**](https://thisbit.ai/dashboard/integrations.html#key-vault-card) and click **Connect storage account**.
-
----
-
-## Option B: Drop into an Existing Terraform Repo (5-Line Module)
-
-If you already manage Azure with Terraform, reference this repository directly as a module:
-
-```hcl
-module "thisbit_byoc" {
-  source               = "github.com/awowIO/thisbit-byoc-azure"
-  resource_group_name  = "rg-thisbit-cauchy"
-  storage_account_name = "stthisbitcauchy01"
-  location             = "westeurope"
-}
-```
-
----
-
-## Option C: Standalone Clone & Apply
-
-### 1. Clone and configure `terraform.tfvars`
-
-```sh
-git clone https://github.com/awowIO/thisbit-byoc-azure.git
-cd thisbit-byoc-azure
-cp terraform.tfvars.example terraform.tfvars
-```
-
-Edit `terraform.tfvars`:
-
-```hcl
-resource_group_name  = "rg-thisbit-cauchy"
-storage_account_name = "stthisbitcauchy01"
-location             = "westeurope"
-```
-
-### 2. Sign in to Azure and apply
-
-```sh
-az login --tenant <your-entra-tenant-id>
-export ARM_SUBSCRIPTION_ID="$(az account show --query id -o tsv)"
-
-terraform init
-terraform apply
-```
-
-### 3. Connect the storage account in Thisbit
-
-Enter `terraform output -raw thisbit_storage_account` under [**Thisbit → Integrations → External location**](https://thisbit.ai/dashboard/integrations.html#key-vault-card) and click **Connect storage account**.
+S3 providers must support HTTPS, path-style requests, and conditional PUT (`If-None-Match: *`).
