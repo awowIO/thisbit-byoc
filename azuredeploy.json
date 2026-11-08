@@ -4,7 +4,8 @@
   "metadata": {
     "_generator": {
       "name": "bicep",
-      "version": "0.30.0"
+      "version": "0.47.16.16243",
+      "templateHash": "10050952072496852944"
     }
   },
   "parameters": {
@@ -18,8 +19,9 @@
     },
     "thisbitConnectorObjectId": {
       "type": "string",
+      "defaultValue": "",
       "metadata": {
-        "description": "Object ID of the Thisbit Connector service principal in your tenant, shown on the Thisbit Integrations page."
+        "description": "Optional: Object ID of the Thisbit Connector enterprise app in your tenant (run: az ad sp create --id aedc1587-9429-480d-a3b3-03d0a34f0251 --query id -o tsv). Leave blank to assign Storage Blob Data Contributor to \"Thisbit Connector\" in the Portal IAM tab after deployment."
       }
     },
     "location": {
@@ -82,9 +84,10 @@
       ]
     },
     {
+      "condition": "[not(empty(parameters('thisbitConnectorObjectId')))]",
       "type": "Microsoft.Authorization/roleAssignments",
       "apiVersion": "2022-04-01",
-      "scope": "[format('Microsoft.Storage/storageAccounts/{0}', parameters('storageAccountName'))]",
+      "scope": "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]",
       "name": "[guid(resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName')), parameters('thisbitConnectorObjectId'), variables('storageBlobDataContributorRoleId'))]",
       "properties": {
         "roleDefinitionId": "[variables('storageBlobDataContributorRoleId')]",

@@ -3,8 +3,8 @@
 @maxLength(24)
 param storageAccountName string
 
-@description('Object ID of the Thisbit Connector service principal in your tenant, shown on the Thisbit Integrations page.')
-param thisbitConnectorObjectId string
+@description('Optional: Object ID of the Thisbit Connector enterprise app in your tenant (run: az ad sp create --id aedc1587-9429-480d-a3b3-03d0a34f0251 --query id -o tsv). Leave blank to assign Storage Blob Data Contributor to "Thisbit Connector" in the Portal IAM tab after deployment.')
+param thisbitConnectorObjectId string = ''
 
 @description('Location for the storage account. Defaults to the resource group location.')
 param location string = resourceGroup().location
@@ -48,7 +48,7 @@ resource voiceReviewsContainer 'Microsoft.Storage/storageAccounts/blobServices/c
   }
 }
 
-resource connectorBlobRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+resource connectorBlobRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (!empty(thisbitConnectorObjectId)) {
   name: guid(storageAccount.id, thisbitConnectorObjectId, storageBlobDataContributorRoleId)
   scope: storageAccount
   properties: {
